@@ -17,15 +17,20 @@ headers = {'Authorization': "Token 658dd0395badb9fe407ea6a16763458a14accb87","us
 def get_All_category():
     print("Enter")
     try:
-        res=requests(url=bvrUrl+"get_all_category",headers=headers)
+        res=requests(url=bvrUrl+"all_categories_url",headers=headers)
         print(res)
-        return res.categoryList
+        all_categories=res['all_categories']
+        return all_categories
     except Exception as e:
         print(e)
 
+def get_non_empty_assortment_in_categorychild(id):
+    res=requests(url=bvrUrl+"get_non_empty_assortment_in_categorychild/"+id,headers=headers)
+
+
 #get Number of empty products list in category child assortment onthe basic of category id
-def get_non_active_product_asin_codes(id):
-    res=requests(url=velocityUrl+"get_non_active_product_asin_codes/"+id,headers=headers)
+def get_non_active_product_asin_codes(child):
+    res=requests(url=bvrUrl+"get_non_active_product_asin_codes/"+child,headers=headers)
     return res.data
 
 def create_Report_and_send_By_Email(categorylist):
@@ -67,17 +72,12 @@ def analyseEmptyAssortments():
     category_list=get_All_category()
     print(category_list)
     for category in category_list:
-        nonLive=get_non_active_product_asin_codes(category['id'])
-        print("2nd called"+nonLive)
-        if len(nonLive)>0:
-            temp={
-                'id':category['id'],
-                'name':category['name'],
-                'label':category['label'],
-                'category_slug':category['category_slug']
-                }
-            listOfEmptyAssortments.append(temp)
-    
+        childs=get_non_empty_assortment_in_categorychild(category['id'])
+        for child in childs:
+            results=get_non_active_product_asin_codes(child['result'])
+            if results==False:
+                listOfEmptyAssortments.append({'category_child':child})
+
     if listOfEmptyAssortments==[]:
         print("No any non live categoryChild accordig to asin codes")
     else:
